@@ -10,10 +10,11 @@
     {
       devShells = forAllSystems (system: {
         default = pkgs.${system}.mkShell {
-          buildInputs = [
-            pkgs.${system}.python312
-            pkgs.${system}.python312Packages.bleak
-            pkgs.${system}.python312Packages.requests
+          buildInputs = with pkgs.${system}; [
+            sqlite
+            python312
+            python312Packages.bleak
+            python312Packages.requests
           ];
         };
       });

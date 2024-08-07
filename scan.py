@@ -9,8 +9,10 @@ import asyncio
 import argparse
 from bleak import BleakClient, BleakGATTCharacteristic
 from bleak.exc import BleakDeviceNotFoundError
+import datetime
 import time
 import requests
+import sqlite3
 
 parser = argparse.ArgumentParser(
         prog="scale-recorder",
@@ -34,7 +36,6 @@ else:
 def send_discord_message(msg):
     if hook is None:
         print("No webhook, not sending message!")
-        print(f"Message: {msg}")
     else:
         msg_json = {
                 'username': "Scale",
@@ -42,8 +43,24 @@ def send_discord_message(msg):
                 }
         requests.post(hook, json = msg_json)
 
+sqlite_conn = None
+def record_weight_sqlite(raw_weight, weight_kg, weight_lb):
+    if sqlite_conn is None:
+        print("Not saving to sqlite, no db path passed.")
+    else:
+        cur = sqlite_conn.cursor()
+        cur.execute("INSERT INTO weights (date_iso8601, raw_weight, weight_kg, weight_lb) VALUES(:date_iso8601, :raw_weight, :weight_kg, :weight_lb)",
+                    { "date_iso8601": datetime.datetime.now().isoformat(), "raw_weight": raw_weight, "weight_kg": weight_kg, "weight_lb": weight_lb })
+        cur.close()
+        sqlite_conn.commit()
+
 if args.sqlite_path is None:
     print("Not saving data to sqlite")
+else:
+    sqlite_conn = sqlite3.connect(args.sqlite_path)
+    cur = sqlite_conn.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS weights(id INTEGER PRIMARY KEY AUTOINCREMENT, date_iso8601 STRING, raw_weight INTEGER, weight_kg REAL, weight_lb REAL)")
+    cur.close()
 
 class StabilizationTimeoutException(Exception):
     pass
@@ -133,6 +150,7 @@ async def main(address):
 
         print(f"Weight: {weight_lb}lb")
         send_discord_message(f"Weight: Raw: {weight} {weight_kg}kg {weight_lb}lb")
+        record_weight_sqlite(weight, weight_kg, weight_lb)
 
 
 while True:
