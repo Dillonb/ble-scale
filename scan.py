@@ -128,7 +128,7 @@ def callback(sender: BleakGATTCharacteristic, data: bytearray):
         print(f"Unknown status byte value {status:X}: data = {print_hex(data)}")
 
 
-async def main(address):
+async def scan(address):
     global weight
     weight = 0
     print("Waiting for scale to appear...")
@@ -153,17 +153,19 @@ async def main(address):
         record_weight_sqlite(weight, weight_kg, weight_lb)
 
 
-while True:
-    try:
-        asyncio.run(main(address))
-        print("Waiting 10 seconds before polling again")
-        time.sleep(10)
-    except BleakDeviceNotFoundError:
-        print("Device not found, polling again...")
-    except StabilizationTimeoutException:
-        print("Timed out waiting for stabilization, starting over...")
-    except Exception as e:
-        print(f"Error, {e}")
-        print("Waiting 10 seconds before polling again")
-        time.sleep(10)
+async def main():
+    while True:
+        try:
+            await scan(address)
+            print("Waiting 10 seconds before polling again")
+            time.sleep(10)
+        except BleakDeviceNotFoundError:
+            print("Device not found, polling again...")
+        except StabilizationTimeoutException:
+            print("Timed out waiting for stabilization, starting over...")
+        except Exception as e:
+            print(f"Error, {e}")
+            print("Waiting 10 seconds before polling again")
+            time.sleep(10)
 
+asyncio.run(main())
