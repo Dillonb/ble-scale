@@ -15,7 +15,7 @@ import requests
 import sqlite3
 
 parser = argparse.ArgumentParser(
-        prog="scale-recorder",
+        prog="ble-scale",
         description="Records data from a very specific BLE scale and sends it to the console, Discord, and a sqlite db."
         )
 
