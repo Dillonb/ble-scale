@@ -31,7 +31,7 @@ if args.discord_webhook_file is None:
     print("Not sending data to Discord.")
 else:
     hook = open(args.discord_webhook_file, "r").read().strip()
-    print(f"Will send data to discord through webhook: '{hook}'")
+    print(f"Will send data to discord through webhook")
 
 def send_discord_message(msg):
     if hook is None:
@@ -57,6 +57,7 @@ def record_weight_sqlite(raw_weight, weight_kg, weight_lb):
 if args.sqlite_path is None:
     print("Not saving data to sqlite")
 else:
+    print(f"Will record data to sqlite at {args.sqlite_path}")
     sqlite_conn = sqlite3.connect(args.sqlite_path)
     cur = sqlite_conn.cursor()
     cur.execute("CREATE TABLE IF NOT EXISTS weights(id INTEGER PRIMARY KEY AUTOINCREMENT, date_iso8601 STRING, raw_weight INTEGER, weight_kg REAL, weight_lb REAL)")
