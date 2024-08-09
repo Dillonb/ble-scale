@@ -4,6 +4,8 @@ import sqlite3
 from datetime import datetime
 import argparse
 
+date_format = "%Y/%m/%d %H:%M:%S"
+
 parser = argparse.ArgumentParser(
         prog="scale-graph",
         description="Displays data from the scale in a graph"
@@ -17,18 +19,14 @@ if not args.sqlite_path:
     parser.print_help()
     exit(1)
 
-def process_date(date):
-    dt = datetime.fromisoformat(date)
-    return dt.strftime("%Y/%m/%d %H:%M:%S")
-
-conn = sqlite3.connect("/var/lib/syncthing-data/ble-scale-data/sqlite.db")
+conn = sqlite3.connect(args.sqlite_path)
 cur = conn.cursor()
 res = cur.execute("select date_iso8601, weight_lb from weights")
 
 dates, prices = zip(*res.fetchall())
-dates = [process_date(date) for date in dates]
+dates = [datetime.fromisoformat(date).strftime(date_format) for date in dates]
 
-plt.date_form("Y/m/d H:M:S")
+plt.date_form(date_format.replace("%", ""))
 plt.plot(dates, prices)
 
 plt.show()
