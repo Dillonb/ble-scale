@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser(
         )
 
 parser.add_argument('-s', '--sqlite-path', type=str)
+parser.add_argument('-k', '--kilograms', help="Display in kilograms instead of pounds", action='store_true')
 
 args = parser.parse_args()
 
@@ -21,7 +22,8 @@ if not args.sqlite_path:
 
 conn = sqlite3.connect(args.sqlite_path)
 cur = conn.cursor()
-res = cur.execute("select date_iso8601, weight_lb from weights")
+unit_column = 'weight_kg' if args.kilograms else 'weight_lb'
+res = cur.execute(f"select date_iso8601, {unit_column} from weights")
 
 dates, prices = zip(*res.fetchall())
 dates = [datetime.fromisoformat(date).strftime(date_format) for date in dates]
