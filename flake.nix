@@ -18,9 +18,13 @@
             (python312.withPackages (pythonPackages: with pythonPackages; [
               bleak
               requests
+              plotext
             ]))
           ];
-          installPhase = "install -Dm755 ${./ble-scale.py} $out/bin/ble-scale";
+          installPhase = ''
+            install -Dm755 ${./ble-scale.py} $out/bin/ble-scale
+            install -Dm755 ${./scale-graph.py} $out/bin/scale-graph
+          '';
         };
       });
 
@@ -28,6 +32,11 @@
         default = {
           type = "app";
           program = "${self.packages.${system}.default}/bin/ble-scale";
+        };
+
+        graph = {
+          type = "app";
+          program = "${self.packages.${system}.default}/bin/scale-graph";
         };
       });
 
@@ -38,6 +47,7 @@
             python312
             python312Packages.bleak
             python312Packages.requests
+            python312Packages.plotext
           ];
         };
       });
