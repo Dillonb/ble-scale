@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('-s', '--sqlite-path', type=str)
 parser.add_argument('-k', '--kilograms', help="Display in kilograms instead of pounds", action='store_true')
+parser.add_argument('-t', '--table', help="Display a table instead of a graph", action='store_true')
 
 args = parser.parse_args()
 
@@ -25,10 +26,14 @@ cur = conn.cursor()
 unit_column = 'weight_kg' if args.kilograms else 'weight_lb'
 res = cur.execute(f"select date_iso8601, {unit_column} from weights")
 
-dates, prices = zip(*res.fetchall())
-dates = [datetime.fromisoformat(date).strftime(date_format) for date in dates]
+dates, weights = zip(*res.fetchall())
+if args.table:
+    for date, weight in zip(dates, weights):
+        print(f"{date}\t{weight}")
+else:
+    dates = [datetime.fromisoformat(date).strftime(date_format) for date in dates]
 
-plt.date_form(date_format.replace("%", ""))
-plt.plot(dates, prices)
+    plt.date_form(date_format.replace("%", ""))
+    plt.plot(dates, weights)
 
-plt.show()
+    plt.show()
