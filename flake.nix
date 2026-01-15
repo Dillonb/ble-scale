@@ -15,7 +15,7 @@
           version = shortRev;
           dontUnpack = true;
           buildInputs = with pkgs.${system}; [
-            (python312.withPackages (pythonPackages: with pythonPackages; [
+            (python313.withPackages (pythonPackages: with pythonPackages; [
               bleak
               requests
               plotext
@@ -44,10 +44,10 @@
         default = pkgs.${system}.mkShell {
           buildInputs = with pkgs.${system}; [
             sqlite
-            python312
-            python312Packages.bleak
-            python312Packages.requests
-            python312Packages.plotext
+            python313
+            python313Packages.bleak
+            python313Packages.requests
+            python313Packages.plotext
           ];
         };
       });
