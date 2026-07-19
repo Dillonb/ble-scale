@@ -26,6 +26,8 @@ parser.add_argument('-s', '--sqlite-path', type=str)
 args = parser.parse_args()
 
 hook = None
+discord_tasks = set()
+discord_timeout = 10
 
 if args.discord_webhook_file is None:
     print("Not sending data to Discord.")
@@ -33,15 +35,27 @@ else:
     hook = open(args.discord_webhook_file, "r").read().strip()
     print(f"Will send data to discord through webhook")
 
-def send_discord_message(msg):
+def send_discord_message(webhook, msg):
+    msg_json = {
+            'username': "Scale",
+            'content': msg
+            }
+    response = requests.post(webhook, json = msg_json, timeout=discord_timeout)
+    response.raise_for_status()
+
+def discord_message_done(task):
+    discord_tasks.discard(task)
+    if not task.cancelled() and (error := task.exception()) is not None:
+        print(f"Error sending data to Discord: {error}")
+
+def dispatch_discord_message(msg):
     if hook is None:
         print("No webhook, not sending message!")
-    else:
-        msg_json = {
-                'username': "Scale",
-                'content': msg
-                }
-        requests.post(hook, json = msg_json)
+        return
+
+    task = asyncio.create_task(asyncio.to_thread(send_discord_message, hook, msg))
+    discord_tasks.add(task)
+    task.add_done_callback(discord_message_done)
 
 sqlite_conn = None
 def record_weight_sqlite(raw_weight, weight_kg, weight_lb):
@@ -152,8 +166,8 @@ async def scan(address):
         await client.write_gatt_char(write_service, bytes(goodbye_magic))
 
         print(f"Weight: {weight_lb}lb")
-        send_discord_message(f"Weight: Raw: {weight} {weight_kg}kg {weight_lb}lb")
         record_weight_sqlite(weight, weight_kg, weight_lb)
+        dispatch_discord_message(f"Weight: Raw: {weight} {weight_kg}kg {weight_lb}lb")
 
 
 async def main():
