@@ -24,7 +24,7 @@ if not args.sqlite_path:
 conn = sqlite3.connect(args.sqlite_path)
 cur = conn.cursor()
 unit_column = 'weight_kg' if args.kilograms else 'weight_lb'
-res = cur.execute(f"select date_iso8601, {unit_column} from weights")
+res = cur.execute(f"select date_iso8601, {unit_column} from weights order by date_iso8601, id")
 
 dates, weights = zip(*res.fetchall())
 if args.table:
