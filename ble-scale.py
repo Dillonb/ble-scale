@@ -7,12 +7,15 @@
 
 import asyncio
 import argparse
-from bleak import BleakClient, BleakGATTCharacteristic
+from bleak import BleakClient, BleakGATTCharacteristic, BleakScanner
 from bleak.exc import BleakDeviceNotFoundError
 import datetime
+import sys
 import time
 import requests
 import sqlite3
+
+sys.stdout.reconfigure(line_buffering=True)
 
 parser = argparse.ArgumentParser(
         prog="ble-scale",
@@ -144,12 +147,29 @@ def callback(sender: BleakGATTCharacteristic, data: bytearray, reading_received:
         print(f"Unknown status byte value {status:X}: data = {print_hex(data)}")
 
 
+async def find_scale(address):
+    scale_found = asyncio.Event()
+    scale = None
+
+    def device_found(device, advertisement_data):
+        nonlocal scale
+        if device.address.casefold() == address.casefold():
+            scale = device
+            scale_found.set()
+
+    async with BleakScanner(device_found):
+        await scale_found.wait()
+
+    return scale
+
+
 async def scan(address):
     global weight
     weight = 0
     reading_received = asyncio.Event()
     print("Waiting for scale to appear...")
-    async with BleakClient(address) as client:
+    scale = await find_scale(address)
+    async with BleakClient(scale) as client:
         await client.start_notify(
                 read_service,
                 lambda sender, data: callback(sender, data, reading_received)
