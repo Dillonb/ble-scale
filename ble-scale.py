@@ -111,7 +111,7 @@ weight = 0
 weight_kg = 0
 weight_lb = 0
 
-def callback(sender: BleakGATTCharacteristic, data: bytearray):
+def callback(sender: BleakGATTCharacteristic, data: bytearray, reading_received: asyncio.Event):
     global weight
     global weight_kg
     global weight_lb
@@ -125,6 +125,7 @@ def callback(sender: BleakGATTCharacteristic, data: bytearray):
         weight = get_int16(data, 3)
         weight_kg = weight / 100
         weight_lb = kg_to_lb(weight_kg)
+        reading_received.set()
     else:
         print(f"Unknown status byte value {status:X}: data = {print_hex(data)}")
 
@@ -132,20 +133,21 @@ def callback(sender: BleakGATTCharacteristic, data: bytearray):
 async def scan(address):
     global weight
     weight = 0
+    reading_received = asyncio.Event()
     print("Waiting for scale to appear...")
     async with BleakClient(address) as client:
-        await client.start_notify(read_service, callback)
+        await client.start_notify(
+                read_service,
+                lambda sender, data: callback(sender, data, reading_received)
+                )
 
         await client.write_gatt_char(write_service, bytes(hello_magic))
         await client.write_gatt_char(write_service, bytes(timestamp_bytes))
 
-        timeout = 10
-        while weight == 0 and timeout > 0:
-            await asyncio.sleep(1.0)
-            timeout -= 1
-
-        if timeout == 0:
-            raise StabilizationTimeoutException
+        try:
+            await asyncio.wait_for(reading_received.wait(), timeout=10)
+        except TimeoutError as error:
+            raise StabilizationTimeoutException from error
 
         await client.write_gatt_char(write_service, bytes(goodbye_magic))
 
