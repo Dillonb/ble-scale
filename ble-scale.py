@@ -161,7 +161,7 @@ async def main():
         try:
             await scan(address)
             print("Waiting 10 seconds before polling again")
-            time.sleep(10)
+            await asyncio.sleep(10)
         except BleakDeviceNotFoundError:
             print("Device not found, polling again...")
         except StabilizationTimeoutException:
@@ -169,6 +169,6 @@ async def main():
         except Exception as e:
             print(f"Error, {e}")
             print("Waiting 10 seconds before polling again")
-            time.sleep(10)
+            await asyncio.sleep(10)
 
 asyncio.run(main())
