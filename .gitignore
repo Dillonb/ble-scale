@@ -1,3 +1,4 @@
 .direnv
 hook
 sqlite.db
+__pycache__
